@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.vscode/
+TestResults/
+*.user
+*.suo
+*.trx
+*.swp
+UnitTest1.cs
+appsettings.Development.json
