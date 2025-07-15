@@ -1,6 +1,6 @@
 using RestSharp;
 using Newtonsoft.Json;
-using EnsekApiTestFramework.Models; 
+using EnsekApiTestFramework.Models;
 
 public class EnergyService
 {
@@ -16,41 +16,97 @@ public class EnergyService
     public ResetResponse ResetTestData()
     {
         var request = new RestRequest("ENSEK/reset", Method.Post);
-        request.AddHeader("Authorization", $"Bearer {_authToken}");
+      request.AddHeader("Authorization", $"Bearer {_authToken}");
         var response = _apiClient.Execute(request);
-        return JsonConvert.DeserializeObject<ResetResponse>(response.Content);
-    }
 
-    public BuyEnergyResponse BuyEnergy(string energyType, int quantity)
-    {
-        var request = new RestRequest($"ENSEK/buy/{energyType}/{quantity}", Method.Put);
-        request.AddHeader("Authorization", $"Bearer {_authToken}");
-        var response = _apiClient.Execute(request);
-        
         if (!response.IsSuccessful)
         {
             throw new ApplicationException(
-                $"Failed to buy energy: {response.StatusCode}. " +
+                $"Reset failed: {response.StatusCode}. " +
                 $"Error: {response.ErrorMessage ?? JsonConvert.DeserializeObject<ErrorResponse>(response.Content)?.Message}"
+            );
+        }
+
+        return JsonConvert.DeserializeObject<ResetResponse>(response.Content);
+    }
+
+    public BuyEnergyResponse BuyEnergy(int energyId, int quantity)
+    {
+        var request = new RestRequest($"ENSEK/buy/{energyId}/{quantity}", Method.Put);
+        request.AddHeader("accept", "application/json");
+        request.AddHeader("Authorization", $"Authorization");
+        var response = _apiClient.Execute(request);
+
+        if (!response.IsSuccessful)
+        {
+            var error = JsonConvert.DeserializeObject<ErrorResponse>(response.Content);
+            throw new ApplicationException(
+                $"Energy purchase failed ({response.StatusCode}): {error?.Message ?? response.ErrorMessage}"
             );
         }
 
         return JsonConvert.DeserializeObject<BuyEnergyResponse>(response.Content);
     }
 
-    public List<Order> GetAllOrders()
+    public OrderListResponse GetAllOrders()
     {
         var request = new RestRequest("ENSEK/orders", Method.Get);
-        request.AddHeader("Authorization", $"Bearer {_authToken}");
+        request.AddHeader("accept", "application/json");
+        request.AddHeader("Authorization", $"Authorization");
         var response = _apiClient.Execute(request);
-        return JsonConvert.DeserializeObject<List<Order>>(response.Content);
+
+        if (!response.IsSuccessful)
+        {
+            throw new ApplicationException(
+                $"Failed to get orders: {response.StatusCode}. " +
+                $"Error: {response.ErrorMessage ?? JsonConvert.DeserializeObject<ErrorResponse>(response.Content)?.Message}"
+            );
+        }
+
+        return JsonConvert.DeserializeObject<OrderListResponse>(response.Content);
     }
 
     public EnergyStockResponse GetEnergyStock()
     {
         var request = new RestRequest("ENSEK/energy", Method.Get);
+        request.AddHeader("accept", "application/json");
+        request.AddHeader("Authorization", $"Authorization");
+        var response = _apiClient.Execute(request);
+
+        if (!response.IsSuccessful)
+        {
+            throw new ApplicationException(
+                $"Failed to get energy stock: {response.StatusCode}. " +
+                $"Error: {response.ErrorMessage ?? JsonConvert.DeserializeObject<ErrorResponse>(response.Content)?.Message}"
+            );
+        }
+
+        return JsonConvert.DeserializeObject<EnergyStockResponse>(response.Content);
+    }
+
+    public Order GetOrderById(string orderId)
+    {
+        var request = new RestRequest($"ENSEK/orders/{orderId}", Method.Get);
+        request.AddHeader("accept", "application/json");
+        request.AddHeader("Authorization", $"Authorization");
+        var response = _apiClient.Execute(request);
+
+        if (!response.IsSuccessful)
+        {
+            throw new ApplicationException(
+                $"Failed to get order {orderId}: {response.StatusCode}. " +
+                $"Error: {response.ErrorMessage ?? JsonConvert.DeserializeObject<ErrorResponse>(response.Content)?.Message}"
+            );
+        }
+
+        return JsonConvert.DeserializeObject<Order>(response.Content);
+    }
+
+    public bool DeleteOrder(string orderId)
+    {
+        var request = new RestRequest($"ENSEK/orders/{orderId}", Method.Delete);
         request.AddHeader("Authorization", $"Bearer {_authToken}");
         var response = _apiClient.Execute(request);
-        return JsonConvert.DeserializeObject<EnergyStockResponse>(response.Content);
+        return response.IsSuccessful;
     }
 }

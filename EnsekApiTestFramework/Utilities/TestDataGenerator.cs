@@ -1,69 +1,47 @@
+using System;
+using System.Collections.Generic;
+
 public static class TestDataGenerator
 {
     private static readonly Random _random = new Random();
     
-    public static int RandomQuantity(int min = 1, int max = 100)
-    {
-        return _random.Next(min, max + 1);
-    }
+    public static int RandomQuantity(int min = 1, int max = 100) => 
+        _random.Next(min, max + 1);
 
-    public static string RandomEnergyType()
-    {
-        var energyTypes = new List<string> { "electric", "gas", "oil", "nuclear", "coal" };
-        return energyTypes[_random.Next(energyTypes.Count)];
-    }
+    public static int RandomEnergyId(IList<int> validIds) => 
+        validIds.Count > 0 ? validIds[_random.Next(validIds.Count)] : 0;
 
-    public static DateTime RandomOrderDate(DateTime? startDate = null, DateTime? endDate = null)
+    public static Dictionary<int, int> GenerateEnergyPurchaseCombinations(
+        IList<int> validIds, int minQty = 1, int maxQty = 100)
     {
-        startDate ??= DateTime.Now.AddYears(-1);
-        endDate ??= DateTime.Now;
-        
-        TimeSpan timeSpan = endDate.Value - startDate.Value;
-        TimeSpan newSpan = new TimeSpan(0, _random.Next(0, (int)timeSpan.TotalMinutes), 0);
-        return startDate.Value + newSpan;
-    }
-
-    public static string RandomCustomerId()
-    {
-        return Guid.NewGuid().ToString().Substring(0, 8);
-    }
-
-    public static Dictionary<string, int> GenerateEnergyPurchaseCombinations()
-    {
-        return new Dictionary<string, int>
+        var purchases = new Dictionary<int, int>();
+        foreach (var id in validIds)
         {
-            { "electric", RandomQuantity() },
-            { "gas", RandomQuantity() },
-            { "oil", RandomQuantity() }
-        };
-    }
-
-    public static Dictionary<string, object> GenerateInvalidPurchaseData()
-    {
-        var invalidTypes = new List<object>
-        {
-            new { energyType = "invalid", quantity = 1 },
-            new { energyType = "electric", quantity = 0 },
-            new { energyType = "gas", quantity = -1 },
-            new { energyType = "oil", quantity = 999999 }
-        };
-
-        return new Dictionary<string, object>
-        {
-            { "InvalidEnergyType", invalidTypes[0] },
-            { "ZeroQuantity", invalidTypes[1] },
-            { "NegativeQuantity", invalidTypes[2] },
-            { "ExcessiveQuantity", invalidTypes[3] }
-        };
-    }
-
-    public static List<DateTime> GenerateHistoricalOrderDates(int count)
-    {
-        var dates = new List<DateTime>();
-        for (int i = 0; i < count; i++)
-        {
-            dates.Add(RandomOrderDate(endDate: DateTime.Now.AddDays(-1)));
+            purchases[id] = RandomQuantity(minQty, maxQty);
         }
-        return dates;
+        return purchases;
+    }
+
+    public static List<Dictionary<string, object>> GenerateInvalidPurchaseData()
+    {
+        return new List<Dictionary<string, object>>
+        {
+            new Dictionary<string, object> { ["id"] = -1, ["quantity"] = 1 },
+            new Dictionary<string, object> { ["id"] = 1, ["quantity"] = 0 },
+            new Dictionary<string, object> { ["id"] = 2, ["quantity"] = -5 },
+            new Dictionary<string, object> { ["id"] = 3, ["quantity"] = 999999 }
+        };
+    }
+
+    public static string RandomOrderId() => 
+        Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+
+    public static DateTime RandomOrderDate(DateTime? start = null, DateTime? end = null)
+    {
+        start ??= DateTime.Now.AddYears(-1);
+        end ??= DateTime.Now;
+        
+        int range = (end.Value - start.Value).Days;
+        return start.Value.AddDays(_random.Next(range));
     }
 }

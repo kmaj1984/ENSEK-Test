@@ -3,12 +3,11 @@ using RestSharp;
 public class ApiClient
 {
     private readonly RestClient _client;
-    private readonly string _baseUrl;
 
     public ApiClient(string baseUrl)
     {
-        _baseUrl = baseUrl;
         _client = new RestClient(baseUrl);
+        _client.AddDefaultHeader("Accept", "application/json");
     }
 
     public async Task<RestResponse> ExecuteAsync(RestRequest request)
@@ -18,6 +17,7 @@ public class ApiClient
 
     public RestResponse Execute(RestRequest request)
     {
-        return _client.Execute(request);
+        var response = _client.Execute(request);
+        return response;
     }
 }

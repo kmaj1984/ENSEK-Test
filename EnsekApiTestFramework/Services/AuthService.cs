@@ -10,45 +10,59 @@ public class AuthService
         _apiClient = apiClient;
     }
 
-   public LoginResponse Login(string username, string password)
-{
-    var request = new RestRequest("api/auth", Method.Post); // Changed from "ENSEK/auth"
-    request.AddJsonBody(new { username, password });
-    
-    var response = _apiClient.Execute(request);
-    
-    if (!response.IsSuccessful)
+    public LoginResponse Login(string username, string password)
     {
-        throw new ApplicationException(
-            $"Authentication failed: {response.StatusCode}. " +
-            $"Response: {response.Content}"
-        );
-    }
+        var request = new RestRequest("ENSEK/login", Method.Post);
+        request.AddHeader("Content-Type", "application/json");
+        request.AddHeader("Accept", "application/json");
 
-    return JsonConvert.DeserializeObject<LoginResponse>(response.Content);
+        // Add this only if you have a real token
+        request.AddHeader("Authorization", "Bearer your-token-here");
+
+        request.AddJsonBody(new LoginRequest
+        {
+            Username = username,
+            Password = password
+        });
+
+        var response = _apiClient.Execute(request);
+
+        if (!response.IsSuccessful || string.IsNullOrEmpty(response.Content))
+        {
+            throw new ApplicationException(
+                $"Authentication failed: {(int)response.StatusCode} {response.StatusDescription}. Response: {response.Content}"
+            );
+        }
+
+        try
+        {
+            return JsonConvert.DeserializeObject<LoginResponse>(response.Content);
+        }
+        catch (JsonException ex)
+        {
+            throw new ApplicationException("Failed to parse authentication response.", ex);
+        }
+    }
 }
 
-    public bool ValidateToken(string token)
-    {
-        var request = new RestRequest("ENSEK/validate", Method.Get);
-        request.AddHeader("Authorization", $"Bearer {token}");
-        var response = _apiClient.Execute(request);
-        return response.IsSuccessful;
-    }
+public class LoginRequest
+{
+    [JsonProperty("username")]
+    public string Username { get; set; }
 
-    public bool Logout(string token)
-    {
-        var request = new RestRequest("ENSEK/logout", Method.Post);
-        request.AddHeader("Authorization", $"Bearer {token}");
-        var response = _apiClient.Execute(request);
-        return response.IsSuccessful;
-    }
+    [JsonProperty("password")]
+    public string Password { get; set; }
+}
 
-    public LoginResponse RefreshToken(string refreshToken)
-    {
-        var request = new RestRequest("ENSEK/refresh", Method.Post);
-        request.AddHeader("Authorization", $"Bearer {refreshToken}");
-        var response = _apiClient.Execute(request);
-        return JsonConvert.DeserializeObject<LoginResponse>(response.Content);
-    }
+public class LoginResponse
+{
+    // Define properties based on the expected JSON response from the API.
+    // Example:
+     [JsonProperty("access_token")]
+    public string AccessToken { get; set; }
+
+    [JsonProperty("message")]
+    public string Message { get; set; }
+
+    // Add any other fields returned by the login endpoint.
 }

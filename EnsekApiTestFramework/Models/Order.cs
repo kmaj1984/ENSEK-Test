@@ -7,13 +7,14 @@ namespace EnsekApiTestFramework.Models
         [JsonProperty("id")]
         public string Id { get; set; }
 
-        [JsonProperty("energyType")]
-        public string EnergyType { get; set; }
+        // Changed to match Swagger's energy_id
+        [JsonProperty("energy_id")]
+        public int EnergyId { get; set; }
 
         [JsonProperty("quantity")]
         public int Quantity { get; set; }
 
-        [JsonProperty("timeCreated")]
+        [JsonProperty("time_created")]  // Standardized naming
         public string TimeCreated { get; set; }
 
         [JsonProperty("status")]
